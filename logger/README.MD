@@ -1,16 +1,15 @@
 # Logger
 
 Used to create a logging entity in the program.
-
 Possible values:
 
-logOutput - stdout, syslog.
+**logOutput** - stdout, syslog.
 
-logLevel - info, debug, trace.
+**logLevel** - info, debug, trace.
 
-logFormat - json, default.
+**logFormat** - json, default.
 
-syslogTag - any string.
+**syslogTag** - any string.
 
 ## Examples
 
