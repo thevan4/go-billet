@@ -13,7 +13,9 @@ import (
 func Execute(fullCommand, contextFolder string, arguments []string) ([]byte, []byte, int, error) {
 	var emptyBytes []byte
 	cmd := exec.Command(fullCommand, arguments...)
-	cmd.Dir = contextFolder
+	if contextFolder != "" {
+		cmd.Dir = contextFolder
+	}
 
 	stdoutPipe, err := cmd.StdoutPipe()
 	if err != nil {
