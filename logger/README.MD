@@ -1,6 +1,10 @@
 # Logger
 
 Used to create a logging entity in the program.
+
+Libraries used:
+[sirupsen: logrus](github.com/sirupsen/logrus) and [x-cray: logrus-prefixed-formatter](github.com/x-cray/logrus-prefixed-formatter)
+
 Possible values:
 
 **logOutput** - stdout, syslog.
