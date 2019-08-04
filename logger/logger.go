@@ -9,7 +9,6 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	logrus_syslog "github.com/sirupsen/logrus/hooks/syslog"
-	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 )
 
 // NewLogger - new logrus logger
@@ -61,7 +60,7 @@ func applyLogFormatter(logrusLog *log.Logger, rawLogFormat string) error {
 		logrusLog.SetFormatter(&log.JSONFormatter{})
 		return nil
 	case "default":
-		logrusLog.SetFormatter(&prefixed.TextFormatter{
+		logrusLog.SetFormatter(&log.TextFormatter{
 			TimestampFormat:  "2006-01-02 15:04:05",
 			FullTimestamp:    true,
 			QuoteEmptyFields: true,
