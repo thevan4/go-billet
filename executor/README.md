@@ -12,7 +12,7 @@ import "github.com/thevan4/go-billet/executor"
 fullCommand := "/usr/bin/python"
 contextFolder := "/someContextFolder"
 arguments := []string{"/opt/some/scripts/template.py", "/execute-file-1464679034681560983"}
-stdout, stderr, exitCode, err := Execute(fullCommand, contextFolder, arguments)
+stdout, stderr, exitCode, err := executor.Execute(fullCommand, contextFolder, arguments)
 if err != nil {
     // your error handling
 }
