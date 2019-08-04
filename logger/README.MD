@@ -18,6 +18,8 @@ Possible values:
 ## Examples
 
 ```golang
+import "github.com/thevan4/go-billet/logger"
+...
 logging, err := logger.NewLogger(logOutput, logLevel, logFormat, syslogTag)
 if err != nil {
     // your error handling
@@ -30,6 +32,8 @@ logging.WithFields(logrus.Fields{
 ```
 
 ```golang
+import "github.com/thevan4/go-billet/logger"
+...
 logging, err := logger.NewLogger("stdout", "info", "default", "")
 if err != nil {
     fmt.Println(err)
