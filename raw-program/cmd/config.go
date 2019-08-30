@@ -36,7 +36,7 @@ const (
 	// add some new here
 )
 
-// Need builds with ldflags
+// For builds with ldflags
 var (
 	version = "TBD @ ldflags"
 	commit  = "TBD @ ldflags"
@@ -51,7 +51,7 @@ var (
 	uuidForRootProcess string
 )
 
-// Default определяет значиния переменных конфига по умолчанию
+// Default set default values
 func Default() map[string]interface{} {
 	return map[string]interface{}{
 		logOutputName: defaultLogOutput,
@@ -121,7 +121,7 @@ func init() {
 	pflag.Parse()
 	viperConfig.BindPFlags(pflag.CommandLine)
 
-	// change logging if needed
+	// modify logging
 	err = logger.ApplyLoggerOut(logging, viperConfig.GetString(logOutputName), viperConfig.GetString(syslogTagName))
 	if err != nil {
 		logging.WithFields(logrus.Fields{
