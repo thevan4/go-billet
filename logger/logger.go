@@ -11,30 +11,40 @@ import (
 	logrus_syslog "github.com/sirupsen/logrus/hooks/syslog"
 )
 
-// NewLogger - new logrus logger
+// NewLogger create new logrus logger
 func NewLogger(rawLogOutput, rawLogLevel, rawLogFormat, syslogTag string) (*log.Logger, error) {
 	var err error
 	logrusLog := log.New()
 
-	err = applyLoggerOut(logrusLog, rawLogOutput, syslogTag)
+	err = ApplyLoggerOut(logrusLog, rawLogOutput, syslogTag)
 	if err != nil {
 		return nil, err
 	}
 
-	logLevel, err := log.ParseLevel(rawLogLevel)
+	err = ApplyLoggerLogLevel(logrusLog, rawLogLevel)
 	if err != nil {
 		return nil, err
 	}
-	logrusLog.SetLevel(logLevel)
 
-	err = applyLogFormatter(logrusLog, rawLogFormat)
+	err = ApplyLogFormatter(logrusLog, rawLogFormat)
 	if err != nil {
 		return nil, err
 	}
 	return logrusLog, nil
 }
 
-func applyLoggerOut(logrusLog *log.Logger, logOutput, syslogTag string) error {
+// ApplyLoggerLogLevel set log level
+func ApplyLoggerLogLevel(logrusLog *log.Logger, rawLogLevel string) error {
+	logLevel, err := log.ParseLevel(rawLogLevel)
+	if err != nil {
+		return err
+	}
+	logrusLog.SetLevel(logLevel)
+	return nil
+}
+
+// ApplyLoggerOut set log output
+func ApplyLoggerOut(logrusLog *log.Logger, logOutput, syslogTag string) error {
 	var out io.Writer
 
 	switch logOutput {
@@ -54,7 +64,8 @@ func applyLoggerOut(logrusLog *log.Logger, logOutput, syslogTag string) error {
 	return nil
 }
 
-func applyLogFormatter(logrusLog *log.Logger, rawLogFormat string) error {
+// ApplyLogFormatter set log format
+func ApplyLogFormatter(logrusLog *log.Logger, rawLogFormat string) error {
 	switch rawLogFormat {
 	case "json":
 		logrusLog.SetFormatter(&log.JSONFormatter{})
