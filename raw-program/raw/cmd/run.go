@@ -10,19 +10,23 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const rootEntity = "root entity"
+const programLogName = "program-name" // FIXME: rename that
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "shows program version",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("version is %s\n", version)
+		fmt.Printf("version is %v\ncommit: %v\nbranch: %v", version, commit, branch)
 	},
 }
 
 var runCmd = &cobra.Command{
-	Use:   "run",
-	Short: "starts program_name",
+	Use:   "run",                 // FIXME: rename that
+	Short: "starts program_name", // FIXME: rename that
+	Long: `I'am // FIXME: rename that
+	a
+	log
+	help fo example`,
 	Run: func(cmd *cobra.Command, args []string) {
 		logging.WithFields(logrus.Fields{
 			"entity":             rootEntity,
@@ -44,16 +48,28 @@ var runCmd = &cobra.Command{
 			syscall.SIGQUIT)
 
 		// place for prepare graceful shutdown for all entities
+		// shutdownCommandsChannels := []chan struct{}{}
+		// doneChannels := []chan struct{}{}
+
 		// place for create entities
+		// place for facade
 		// place for start entities
 		<-signalChan // shutdown signal
+		// gracefull shutdown all entities
+		// for _, shutdownCommandsChannel := range shutdownCommandsChannels {
+		// 	shutdownCommandsChannel <- struct{}{}
+		// 	close(shutdownCommandsChannel)
+		// }
+
+		// for _, stopDoneChannel := range doneChannels {
+		// 	<-stopDoneChannel
+		// 	close(stopDoneChannel)
+		// }
 
 		logging.WithFields(logrus.Fields{
 			"entity":     rootEntity,
 			"event uuid": uuidForRootProcess,
-			// add some new here
-		}).Info("Program stoped")
-		// place for magic graceful shutdown for all entities
+		}).Info("Program stopped")
 	},
 }
 
@@ -66,8 +82,8 @@ var configCmd = &cobra.Command{
 }
 
 var rootCmd = &cobra.Command{
-	Use:   "program_name",
-	Short: "program_name do stuff ;-)",
+	Use:   "program-name",              // FIXME: rename that
+	Short: "program-name do stuff ;-)", // FIXME: rename that
 }
 
 //Execute without flags, or unknown flags. Return help in stdout
@@ -85,6 +101,5 @@ Simply type ` + rootCmd.Name() + ` help [path to rootCmdommand] for full details
 
 	rootCmd.SetHelpCommand(help)
 	rootCmd.AddCommand(runCmd, versionCmd, configCmd)
-	rootCmd.AddCommand(runCmd, configCmd)
 	return rootCmd.Execute()
 }

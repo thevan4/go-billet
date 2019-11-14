@@ -12,6 +12,8 @@ import (
 	"github.com/thevan4/go-billet/logger"
 )
 
+const rootEntity = "root entity"
+
 // Default values
 const (
 	defaultConfigFilePath  = "./program.properties"
@@ -19,9 +21,8 @@ const (
 	defaultLogLevel        = "trace"
 	defaultLogFormat       = "default"
 	defaultSystemLogTag    = ""
-	defaultPathToProgramID = "./netcon-id"
-
-// add some new here
+	defaultPathToProgramID = "./program-id"
+	// add some new here
 )
 
 // Configs
@@ -31,8 +32,7 @@ const (
 	logLevelName       = "log-level"
 	logFormatName      = "log-format"
 	syslogTagName      = "syslog-tag"
-
-	programIDName = "program-id"
+	programIDName      = "program-id"
 	// add some new here
 )
 
@@ -51,20 +51,21 @@ var (
 	uuidForRootProcess string
 )
 
-// Default set default values
-func Default() map[string]interface{} {
+// set default values
+func defaultConfig() map[string]interface{} {
 	return map[string]interface{}{
-		logOutputName: defaultLogOutput,
-		logLevelName:  defaultLogLevel,
-		logFormatName: defaultLogFormat,
-		syslogTagName: defaultSystemLogTag,
-		programIDName: defaultPathToProgramID,
+		configFilePathName: defaultConfigFilePath,
+		logOutputName:      defaultLogOutput,
+		logLevelName:       defaultLogLevel,
+		logFormatName:      defaultLogFormat,
+		syslogTagName:      defaultSystemLogTag,
+		programIDName:      defaultPathToProgramID,
 		// add some new here
 	}
 }
 
 func applyDefaultToViper(viperConfig *viper.Viper) {
-	for k, v := range Default() {
+	for k, v := range defaultConfig() {
 		viperConfig.SetDefault(k, v)
 	}
 }
@@ -72,7 +73,7 @@ func applyDefaultToViper(viperConfig *viper.Viper) {
 func init() {
 	var err error
 
-	// make uuid generator adn uuid for root process
+	// make uuid generator and uuid for root process
 	uuidGenerator = portadapter.NewUUIDGenerator()
 	uuidForRootProcess = uuidGenerator.NewUUID().UUID.String()
 
@@ -92,12 +93,10 @@ func init() {
 
 	// work with flags
 	pflag.StringP(configFilePathName, "c", defaultConfigFilePath, "Path to config file. Example value: './program.properties'")
-
 	pflag.String(logOutputName, defaultLogOutput, "Log output. Example values: 'stdout', 'syslog'")
 	pflag.String(logLevelName, defaultLogLevel, "Log level. Example values: 'info', 'debug', 'trace'")
 	pflag.String(logFormatName, defaultLogFormat, "Log format. Example values: 'default', 'json'")
 	pflag.String(syslogTagName, defaultSystemLogTag, "Syslog tag. Example value: 'some_sys_tag'")
-
 	pflag.String(programIDName, defaultPathToProgramID, "Path to program ID. Example value: './program-id'")
 
 	// work with config file
@@ -117,9 +116,15 @@ func init() {
 		}
 	}
 
-	// apply flags
+	// apply config flag here, beacose need to know config file path
 	pflag.Parse()
-	viperConfig.BindPFlags(pflag.CommandLine)
+	err = viperConfig.BindPFlag(configFilePathName, pflag.Lookup(configFilePathName))
+	if err != nil {
+		logging.WithFields(logrus.Fields{
+			"entity":     rootEntity,
+			"event uuid": uuidForRootProcess,
+		}).Fatalf("can't bind config flag: %v", err)
+	}
 
 	// modify logging
 	err = logger.ApplyLoggerOut(logging, viperConfig.GetString(logOutputName), viperConfig.GetString(syslogTagName))
@@ -153,7 +158,7 @@ func init() {
 			logging.WithFields(logrus.Fields{
 				"entity":     rootEntity,
 				"event uuid": uuidForRootProcess,
-			}).Warnf("Config file changed: %v. Current config: %v", e.Name, viperConfig.AllSettings())
+			}).Warnf("Config file changed: %v", e.Name)
 		})
 	}()
 }
