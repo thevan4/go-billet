@@ -9,16 +9,21 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	logrus_syslog "github.com/sirupsen/logrus/hooks/syslog"
+	graylogHttpHook "github.com/thevan4/logrus-graylog-http-hook"
 )
 
 // NewLogger create new logrus logger
-func NewLogger(rawLogOutput, rawLogLevel, rawLogFormat, syslogTag string) (*log.Logger, error) {
+// func NewLogger(rawLogOutput, rawLogLevel, rawLogFormat, syslogTag string) (*log.Logger, error) {
+func NewLogger(rawLogOutput []string, rawLogLevel, rawLogFormat string, extraInfo map[string]interface{}) (*log.Logger, error) {
 	var err error
 	logrusLog := log.New()
 
-	err = ApplyLoggerOut(logrusLog, rawLogOutput, syslogTag)
-	if err != nil {
-		return nil, err
+	for _, logOutput := range rawLogOutput {
+		// extraHook, err := ApplyLoggerOut(logrusLog, logOutput, extraInfo)
+		_, err := ApplyLoggerOut(logrusLog, logOutput, extraInfo)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	err = ApplyLoggerLogLevel(logrusLog, rawLogLevel)
@@ -44,24 +49,81 @@ func ApplyLoggerLogLevel(logrusLog *log.Logger, rawLogLevel string) error {
 }
 
 // ApplyLoggerOut set log output
-func ApplyLoggerOut(logrusLog *log.Logger, logOutput, syslogTag string) error {
+func ApplyLoggerOut(logrusLog *log.Logger,
+	logOutput string,
+	extraInfo map[string]interface{}) (interface{}, error) {
 	var out io.Writer
 
 	switch logOutput {
 	case "stdout":
 		out = os.Stdout
+		return nil, nil
 	case "syslog":
-		hook, err := logrus_syslog.NewSyslogHook("", "", syslog.LOG_INFO, syslogTag)
-		if err != nil {
-			return fmt.Errorf("can't create hook for syslog: %v", err)
+		switch syslogTag := extraInfo["syslogTag"].(type) {
+		case string:
+			hook, err := logrus_syslog.NewSyslogHook("", "", syslog.LOG_INFO, syslogTag)
+			if err != nil {
+				return nil, fmt.Errorf("can't create hook for syslog: %v", err)
+			}
+			logrusLog.Hooks.Add(hook)
+			out = ioutil.Discard
+			logrusLog.SetOutput(out)
+			return nil, nil
+		default:
+			return nil, fmt.Errorf("unknown type in extraInfo map for key 'syslogTag', expect string, have: %T", syslogTag)
 		}
-		logrusLog.Hooks.Add(hook)
+
+	case "graylog":
+		graylogCreator, err := constructDataForGraylogHook(extraInfo)
+		if err != nil {
+			return nil, fmt.Errorf("can't construct data for graylog hook, got error: %v", err)
+		}
+		graylogHook := graylogHttpHook.NewGraylogHook(graylogCreator.graylogAddress, graylogCreator.graylogRetries, graylogCreator.greylogExtra)
+		logrusLog.AddHook(graylogHook)
 		out = ioutil.Discard
+		logrusLog.SetOutput(out)
+		return graylogHook, nil
 	default:
-		return fmt.Errorf("uknown log output type: %s", logOutput)
+		return nil, fmt.Errorf("uknown log output type: %s", logOutput)
 	}
-	logrusLog.SetOutput(out)
-	return nil
+}
+
+func constructDataForGraylogHook(extraInfo map[string]interface{}) (*graylogCreator, error) {
+	graylogInfo := &graylogCreator{}
+	for extraInfoKey, extraInfoValue := range extraInfo {
+		switch extraInfoKey {
+		case "graylogAddress":
+			switch valueAddress := extraInfoValue.(type) {
+			case string:
+				graylogInfo.graylogAddress = valueAddress
+			default:
+				return nil, fmt.Errorf("unknown type in extraInfo map for key 'graylogAddress', expect string, have: %T", valueAddress)
+			}
+		case "graylogRetries":
+			switch valueRetries := extraInfoValue.(type) {
+			case int:
+				graylogInfo.graylogRetries = valueRetries
+			default:
+				return nil, fmt.Errorf("unknown type in extraInfo map for key 'graylogRetries', expect int, have: %T", valueRetries)
+			}
+		case "greylogExtra":
+			switch valueExtra := extraInfoValue.(type) {
+			case map[string]interface{}:
+				graylogInfo.greylogExtra = valueExtra
+			default:
+				return nil, fmt.Errorf("unknown type in extraInfo map for key 'graylogRetries', expect map[string]interface{}, have: %T", valueExtra)
+			}
+		default:
+			continue
+		}
+	}
+	return graylogInfo, nil
+}
+
+type graylogCreator struct {
+	graylogAddress string
+	graylogRetries int
+	greylogExtra   map[string]interface{}
 }
 
 // ApplyLogFormatter set log format
