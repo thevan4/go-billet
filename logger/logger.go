@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"log/syslog"
 	"os"
+	"path"
+	"runtime"
 
 	"github.com/sirupsen/logrus"
 	logrus_syslog "github.com/sirupsen/logrus/hooks/syslog"
@@ -13,11 +15,12 @@ import (
 
 // Logger ...
 type Logger struct {
-	Output    []string
-	Level     string
-	Formatter string
-	SyslogTag string
-	graylog   Graylog
+	Output           []string
+	Level            string
+	Formatter        string
+	SyslogTag        string
+	Graylog          *Graylog
+	LogEventLocation bool
 }
 
 // Graylog ...
@@ -66,7 +69,7 @@ func (logger *Logger) ApplyLoggerOut(logrusLog *logrus.Logger) error {
 			logrusLog.SetOutput(ioutil.Discard)
 			continue
 		case "graylog":
-			graylogHook := graylogHttpHook.NewGraylogHook(logger.graylog.Address, logger.graylog.Retries, logger.graylog.Extra)
+			graylogHook := graylogHttpHook.NewGraylogHook(logger.Graylog.Address, logger.Graylog.Retries, logger.Graylog.Extra)
 			logrusLog.AddHook(graylogHook)
 			logrusLog.SetOutput(ioutil.Discard)
 			continue
@@ -81,16 +84,29 @@ func (logger *Logger) ApplyLoggerOut(logrusLog *logrus.Logger) error {
 func (logger *Logger) ApplyLogFormatter(logrusLog *logrus.Logger) error {
 	switch logger.Formatter {
 	case "json":
+		jsonFormatter := &logrus.JSONFormatter{}
+		if logger.LogEventLocation {
+			jsonFormatter.CallerPrettyfier = func(f *runtime.Frame) (string, string) {
+				filename := path.Base(f.File)
+				return fmt.Sprintf("%s()", f.Function), fmt.Sprintf("%s:%d", filename, f.Line)
+			}
+		}
 		logrusLog.SetFormatter(&logrus.JSONFormatter{})
-		return nil
-	case "default":
-		logrusLog.SetFormatter(&logrus.TextFormatter{
+	case "text":
+		textFormatter := &logrus.TextFormatter{
 			TimestampFormat:  "2006-01-02 15:04:05",
 			FullTimestamp:    true,
 			QuoteEmptyFields: true,
-		})
-		return nil
+		}
+		if logger.LogEventLocation {
+			textFormatter.CallerPrettyfier = func(f *runtime.Frame) (string, string) {
+				filename := path.Base(f.File)
+				return fmt.Sprintf("function=%s()", f.Function), fmt.Sprintf("file=%s:%d", filename, f.Line)
+			}
+		}
+		logrusLog.SetFormatter(textFormatter)
 	default:
 		return fmt.Errorf("uknown log format: %v", logger.Formatter)
 	}
+	return nil
 }
