@@ -28,9 +28,82 @@ For work with graylog you need to initialize the "Graylog" structure:
 ## Examples
 
 ```golang
+package main
 
+import (
+	"github.com/sirupsen/logrus"
+	"github.com/thevan4/go-billet/logger"
+)
+
+func main() {
+	newLogger := &logger.Logger{
+		Output:           []string{"stdout"},
+		Level:            "debug",
+		Formatter:        "text",
+		LogEventLocation: true,
+	}
+	logrusLog, err := logger.NewLogrusLogger(newLogger)
+	if err != nil {
+		panic(err)
+	}
+
+	logrusLog.WithFields(logrus.Fields{
+		"entity":     "main",
+		"event uuid": "00000000-0000-0000-0000-000000000000",
+	}).Info("Hi, i'am logger")
+}
 ```
 
 ```golang
+package main
 
+import (
+	"crypto/tls"
+	"crypto/x509"
+	"io/ioutil"
+	"net/http"
+
+	"github.com/sirupsen/logrus"
+	"github.com/thevan4/go-billet/logger"
+)
+
+func main() {
+	client := &http.Client{}
+	caCert, err := ioutil.ReadFile("./cert/server.crt")
+	if err != nil {
+		panic(err)
+	}
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCert)
+	tlsConfig := &tls.Config{
+		RootCAs: caCertPool,
+	}
+
+	httpTransport := &http.Transport{
+		TLSClientConfig: tlsConfig
+	}
+	httpClient = &http.Client{Transport: httpTransport}
+	
+
+	newGraylog := &logger.Graylog{
+		Address: "http://graylog.sdc.com:12201/gelf",
+		Retries: 30,
+		HTTPClient: httpClient,
+	}
+	newLogger := &logger.Logger{
+		Output:    []string{"stdout"},
+		Level:     "info",
+		Formatter: "json",
+		Graylog:   newGraylog,
+	}
+	logrusLog, err := logger.NewLogrusLogger(newLogger)
+	if err != nil {
+		panic(err)
+	}
+
+	logrusLog.WithFields(logrus.Fields{
+		"entity":     "main",
+		"event uuid": "00000000-0000-0000-0000-000000000000",
+	}).Info("Hi, i'am logger")
+}
 ```
