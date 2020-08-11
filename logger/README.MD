@@ -1,42 +1,36 @@
 # Logger
 
-Used to create a logging entity in the program.
+Used to create a logging entity.
 
 Libraries used:
 [sirupsen: logrus](github.com/sirupsen/logrus)
+[graylog-http-hook](github.com/thevan4/logrus-graylog-http-hook)
 
-Possible values:
+## Start working
 
-**logOutput** - stdout, syslog.
+To start working with logging you need to initialize the "Logger" structure with the necessary parameters:
 
-**logLevel** - info, debug, trace.
++ Logger.Output - stdout, syslog, graylog.
++ Logger.Level - info, debug, trace.
++ Logger.Formatter - json, text.
++ Logger.SyslogTag - any string (if necessary).
++ Logger.Graylog - [instructions below](#Graylog-settings).
++ Logger.LogEventLocation - Logging the event location: the file, the stack, and the name of the function where the logger was called.
 
-**logFormat** - json, default.
+### <a name="Graylog-settings"></a>Graylog settings
 
-**syslogTag** - any string.
+For work with graylog you need to initialize the "Graylog" structure:
+
++ Graylog.Address - address format: "http://graylog.sdc.com:12201/gelf".
++ Graylog.Retries - repeated attempts to send if the connection to graylog failed
++ Graylog.Extra - some extra info, format  map[string]interface{}.
 
 ## Examples
 
 ```golang
-import "github.com/thevan4/go-billet/logger"
-...
-logging, err := logger.NewLogger(logOutput, logLevel, logFormat, syslogTag)
-if err != nil {
-    // your error handling
-}
-logging.WithFields(logrus.Fields{
-    "entity":     someEntity,
-    "event uuid": "00000000-0000-0000-0000-000000000000",
-    "message":    someMessage,
-}).Info("Hi, i'am logger")
+
 ```
 
 ```golang
-import "github.com/thevan4/go-billet/logger"
-...
-logging, err := logger.NewLogger("stdout", "info", "default", "")
-if err != nil {
-    fmt.Println(err)
-    os.Exit(1)
-}
+
 ```
