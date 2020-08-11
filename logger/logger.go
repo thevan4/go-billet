@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log/syslog"
+	"net/http"
 	"os"
 	"path"
 	"runtime"
@@ -25,9 +26,10 @@ type Logger struct {
 
 // Graylog ...
 type Graylog struct {
-	Address string
-	Retries int
-	Extra   map[string]interface{}
+	Address    string
+	Retries    int
+	Extra      map[string]interface{}
+	HTTPClient *http.Client
 }
 
 // NewLogrusLogger create new logrus logger
@@ -69,7 +71,10 @@ func (logger *Logger) ApplyLoggerOut(logrusLog *logrus.Logger) error {
 			logrusLog.SetOutput(ioutil.Discard)
 			continue
 		case "graylog":
-			graylogHook := graylogHttpHook.NewGraylogHook(logger.Graylog.Address, logger.Graylog.Retries, logger.Graylog.Extra)
+			graylogHook, err := graylogHttpHook.NewGraylogHook(logger.Graylog.Address, logger.Graylog.Retries, logger.Graylog.Extra, logger.Graylog.HTTPClient)
+			if err != nil {
+				return fmt.Errorf("can't create graylog hook: %s", err)
+			}
 			logrusLog.AddHook(graylogHook)
 			logrusLog.SetOutput(ioutil.Discard)
 			continue
