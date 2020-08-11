@@ -86,6 +86,7 @@ func (logger *Logger) ApplyLogFormatter(logrusLog *logrus.Logger) error {
 	case "json":
 		jsonFormatter := &logrus.JSONFormatter{}
 		if logger.LogEventLocation {
+			logrusLog.SetReportCaller(true)
 			jsonFormatter.CallerPrettyfier = func(f *runtime.Frame) (string, string) {
 				filename := path.Base(f.File)
 				return fmt.Sprintf("%s()", f.Function), fmt.Sprintf("%s:%d", filename, f.Line)
@@ -99,6 +100,7 @@ func (logger *Logger) ApplyLogFormatter(logrusLog *logrus.Logger) error {
 			QuoteEmptyFields: true,
 		}
 		if logger.LogEventLocation {
+			logrusLog.SetReportCaller(true)
 			textFormatter.CallerPrettyfier = func(f *runtime.Frame) (string, string) {
 				filename := path.Base(f.File)
 				return fmt.Sprintf("function=%s()", f.Function), fmt.Sprintf("file=%s:%d", filename, f.Line)
